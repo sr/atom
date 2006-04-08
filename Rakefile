@@ -10,7 +10,7 @@ task :default => ['test']
 
 spec = Gem::Specification.new do |s|
   s.name = "atom"
-  s.version = "0.1"
+  s.version = "0.2"
   s.author = "Martin Traverso"
   s.email = "mtraverso@acm.org"
   s.homepage = "http://http://rubyforge.org/projects/atom/"
