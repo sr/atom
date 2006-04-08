@@ -133,6 +133,8 @@ module Atom
 		has_many :category, :name => 'category', :type => Category
 		has_one :content, :type => Content
 		has_one :source, :type => Source
+
+		has_many :extended_elements, :name => :any, :namespace => :any, :type => :raw
 	end
 
 	class Feed 

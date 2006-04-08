@@ -26,12 +26,87 @@ require 'rexml/document'
 module XMLMapping
 	def self.included(mod)
 		mod.extend(ClassMethods)
-		mod.instance_variable_set("@attributes", {})
-		mod.instance_variable_set("@elements", {})
-		mod.instance_variable_set("@text_attribute", nil)
+
+		mod.instance_variable_set("@raw_mappings", {})
+		mod.instance_variable_set("@mappings", { :element => {}, :attribute => {}, :text => {}, :namespace => nil})
 	end
 
+
 	def initialize(input)
+		root = parse(input)
+
+		mappings = self.class.mappings
+		raw_mappings = self.class.raw_mappings
+
+		# initialize :many attributes
+		raw_mappings.values.select { |mapping| mapping[:cardinality] == :many }.each { |m|
+			instance_variable_set("@#{m[:attribute]}", [])
+		}
+
+		root.each_element { |e| 
+			process(e, mappings[:element])
+		}
+
+		root.attributes.each_attribute { |a|
+			process(a, mappings[:attribute])
+		}
+
+		mappings[:text].values.each { |mapping|
+			name = mapping[:attribute]
+			value = extract_value(root, mapping)
+			instance_variable_set("@#{name}", value)
+		}
+
+	end
+
+
+	private
+	def process(e, mappings)
+		mapping = find_mapping(mappings, e.namespace, e.name)
+
+			if !mapping.nil?
+				value = extract_value(e, mapping)
+
+				attribute = mapping[:attribute]
+				previous = instance_variable_get("@#{attribute}")
+				case mapping[:cardinality]
+					when :one 
+						raise "Found more than one #{e.name}" if !previous.nil?
+						instance_variable_set("@#{attribute}", value)
+					when :many 
+						previous << value
+				end		
+			end
+	end
+
+	def find_mapping(mappings, namespace, name)
+		mappings.values_at([namespace, name], [namespace, :any], [:any, :any] ).compact.first
+	end
+
+	def extract_value(node, mapping)
+		if mapping.has_key? :type
+			type = mapping[:type]
+			if type == :raw
+				value = node
+			else
+				value = mapping[:type].new(node)	
+			end
+		elsif node.node_type == :element
+			value = node.texts.map { |t| t.value }.to_s
+		elsif node.node_type == :attribute 
+			value = node.value
+		else
+			raise "Unexpected node: #{node.inspect}"
+		end
+
+		if mapping.has_key? :transform
+			value = mapping[:transform].call(value)
+		end
+
+		value
+	end
+
+	def parse(input)
 		if input.respond_to? :to_str
 			root = REXML::Document.new(input).root
 		elsif input.respond_to?(:node_type) && input.node_type == :document
@@ -42,115 +117,76 @@ module XMLMapping
 			raise "Invalid input: #{input}"
 		end
 
-		namespace = self.class.default_namespace
-		attributes = self.class.attributes
-		elements = self.class.elements
-		text_attribute = self.class.text_attribute
-
-		if !text_attribute.nil?
-			name = text_attribute[0]
-			options = text_attribute[1]
-			value = root.text
-
-			if options.has_key? :transform
-				value = options[:transform].call(value)
-			end
-
-			instance_variable_set("@#{name}", value)
-		else
-			# initialize :many attributes
-			elements.select { |k, v|
-				v[:cardinality] == :many
-			}.each { |k, v|
-				instance_variable_set("@#{v[:attribute]}", [])
-			}
-
-			root.each_element { |e| 
-				if e.namespace == namespace && elements.has_key?(e.name.to_sym)
-					options = elements[e.name.to_sym]
-
-					if options.has_key? :type
-							value = options[:type].new(e)	
-					else
-							value = e.text
-					end
-
-					if options.has_key? :transform
-						value = options[:transform].call(value)
-					end
-
-					attribute = options[:attribute]
-
-					existing = instance_variable_get("@#{attribute}")
-					case options[:cardinality]
-						when :one 
-							raise "Found more than one #{e.name}" if !existing.nil?
-							instance_variable_set("@#{attribute}", value)
-						when :many 
-							existing << value
-					end		
-				end
-			}
-		end
-
-		root.attributes.each_attribute { |a|
-			if a.namespace == namespace && attributes.has_key?(a.name.to_sym)
-				options = attributes[a.name.to_sym]
-
-				value = a.value
-				if options.has_key? :transform
-					value = options[:transform].call(value)
-				end
-
-				instance_variable_set("@#{a.name}", value)
-			end
-		}
+		root
 	end
 
 	module ClassMethods
-		attr :attributes
-		attr :elements
-		attr :text_attribute
-		attr :default_namespace
+		def raw_mappings
+			@raw_mappings || superclass.raw_mappings 
+		end
+
+		def mappings
+			@mappings || superclass.mappings 
+		end
 
 		def namespace(namespace)
-			@default_namespace = namespace
+			initialize_vars
+			@mappings[:namespace] = namespace	
 		end
 
 		def has_one(attribute, options = {})
-			attr attribute
 			options[:cardinality] = :one
-			options[:attribute] = attribute
-			
-			name = attribute
-			if options.has_key? :name
-				name = options[:name].to_sym
-			end
-
-			@elements[name] = options
+			add(attribute, :element, options)
 		end
 
 		def has_many(attribute, options = {})
-			attr attribute
 			options[:cardinality] = :many
-			options[:attribute] = attribute
-
-			name = attribute
-			if options.has_key? :name
-				name = options[:name].to_sym
-			end
-
-			@elements[name] = options
+			add(attribute, :element, options)
 		end
 
 		def has_attribute(attribute, options = {})
-			attr attribute
-			@attributes[attribute] = options
+			add(attribute, :attribute, options)
 		end	
 
 		def text(attribute, options = {})
+			options[:namespace] = :any
+			add(attribute, :text, options)
+		end
+
+		private 
+		def add(attribute, xml_type, mapping)
 			attr attribute
-			@text_attribute = [attribute, options]
+			
+			initialize_vars
+
+			mapping[:namespace] ||= mappings[:namespace]
+			mapping[:cardinality] ||= :one
+			mapping[:name] ||= attribute.to_s
+			mapping[:attribute] = attribute
+
+			qualified_name = [mapping[:namespace], mapping[:name]]
+			mappings = @mappings[xml_type][qualified_name] = mapping
+
+			@raw_mappings[attribute] = mapping
+		end
+
+		def initialize_vars
+			@mappings ||= deep_clone(superclass.mappings)
+			@raw_mappings ||= deep_clone(superclass.raw_mappings)
+		end
+
+		def deep_clone(obj)
+			case obj
+				when Hash	
+					obj.entries.inject({}) { |hash, entry|
+						hash[entry[0]] = deep_clone(entry[1])
+						hash
+					}
+				when Array
+					obj.map { |v| deep_clone[v] }
+				else
+					obj
+			end
 		end
 	end
 end
