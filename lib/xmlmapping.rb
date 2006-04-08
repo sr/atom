@@ -64,19 +64,19 @@ module XMLMapping
 	def process(e, mappings)
 		mapping = find_mapping(mappings, e.namespace, e.name)
 
-			if !mapping.nil?
-				value = extract_value(e, mapping)
+		if !mapping.nil?
+			value = extract_value(e, mapping)
 
-				attribute = mapping[:attribute]
-				previous = instance_variable_get("@#{attribute}")
-				case mapping[:cardinality]
-					when :one 
-						raise "Found more than one #{e.name}" if !previous.nil?
-						instance_variable_set("@#{attribute}", value)
-					when :many 
-						previous << value
-				end		
-			end
+			attribute = mapping[:attribute]
+			previous = instance_variable_get("@#{attribute}")
+			case mapping[:cardinality]
+				when :one 
+					raise "Found more than one #{e.name}" if !previous.nil?
+					instance_variable_set("@#{attribute}", value)
+				when :many 
+					previous << value
+			end		
+		end
 	end
 
 	def find_mapping(mappings, namespace, name)
