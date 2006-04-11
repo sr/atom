@@ -42,6 +42,11 @@ module XMLMapping
 		raw_mappings.values.select { |mapping| mapping[:cardinality] == :many }.each { |m|
 			instance_variable_set("@#{m[:attribute]}", [])
 		}
+		
+		# initialize defaults
+		raw_mappings.values.select { |mapping| mapping.has_key? :default }.each { |m|
+			instance_variable_set("@#{m[:attribute]}", m[:default])
+		}
 
 		root.each_element { |e| 
 			process(e, mappings[:element])
@@ -71,7 +76,6 @@ module XMLMapping
 			previous = instance_variable_get("@#{attribute}")
 			case mapping[:cardinality]
 				when :one 
-					raise "Found more than one #{e.name}" if !previous.nil?
 					instance_variable_set("@#{attribute}", value)
 				when :many 
 					previous << value
@@ -151,6 +155,9 @@ module XMLMapping
 		def text(attribute, options = {})
 			options[:namespace] = :any
 			add(attribute, :text, options)
+		end
+
+		def ensure(message, &block)
 		end
 
 		private 
