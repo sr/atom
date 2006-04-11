@@ -38,17 +38,56 @@ module Atom
 			else
 				case type.value
 					when 'text': 'text/plain'
+					when 'html': 'text/html'
 					when 'xhtml': 'text/xhtml'
 					else type.value
 				end
 			end
 
 			value = case @mime_type
-				when 'text/plain': element.texts.join
+				when 'text/plain', 'text/html': element.texts.map {|t| t.value }.join
 				else element.children.to_s
 			end
 
 			super value
+		end
+	end
+
+	class Content
+		attr :mime_type
+		attr :src
+		attr :value
+
+		def initialize(element)
+			type = element.attribute('type', NAMESPACE)
+			src = element.attribute('src', NAMESPACE)
+			
+			if src.nil?
+				@mime_type = if type.nil?
+					'text/plain'
+				else
+					case type.value
+						when 'text': 'text/plain'
+						when 'html': 'text/html'
+						when 'xhtml': 'text/xhtml'
+						else type.value
+					end
+				end
+			
+				@value = case @mime_type
+					when 'text/plain', 'text/html': element.texts.map { |t| t.value }.join
+					when 'text/xhtml', element.children.to_s
+					when /\+xml$|\/xml$/: element.elements.first
+					else element.texts.join.strip.unpack("m")[0]
+				end
+			else
+				@src = src.value
+				if !type.nil?
+					@mime_type = type.value
+				end
+
+				@value = nil
+			end
 		end
 	end
 
@@ -112,20 +151,6 @@ module Atom
 
 		def to_s
 			term
-		end
-	end
-
-	class Content
-		include XMLMapping
-
-		namespace NAMESPACE
-
-		has_attribute :type
-		has_attribute :src
-		text :value
-
-		def to_s
-			value || src
 		end
 	end
 

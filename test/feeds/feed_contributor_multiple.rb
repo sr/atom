@@ -20,9 +20,9 @@ test = lambda { |feed|
 	assert_equal 2, feed.contributors.size
 	assert_equal 'Contributor 1', feed.contributors[0].name
 	assert_equal 'me@example.com', feed.contributors[0].email
-	assert_equal 'http://example.com', feed.contributors[0].uri
+	assert_equal 'http://example.com/', feed.contributors[0].uri
 
 	assert_equal 'Contributor 2', feed.contributors[1].name
 	assert_equal 'you@example.com', feed.contributors[1].email
-	assert_equal 'http://two.example.com', feed.contributors[1].uri
+	assert_equal 'http://two.example.com/', feed.contributors[1].uri
 }

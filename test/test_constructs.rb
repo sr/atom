@@ -63,18 +63,34 @@ class TestAtom < Test::Unit::TestCase
 		assert_equal 'martin@test.com', person.email
 	end
 
-	def test_content
+	def test_content_type_text
 		str = <<-XML
 			<content type='text' xmlns="#{Atom::NAMESPACE}">some text</content>
 		XML
 
-		content = Atom::Content.new(str)
+		element = REXML::Document.new(str).root
+		content = Atom::Content.new(element)
 		
-		assert_respond_to content, :type
-		assert_equal 'text', content.type
+		assert_respond_to content, :mime_type
+		assert_equal 'text/plain', content.mime_type
 
 		assert_respond_to content, :value
 		assert_equal 'some text', content.value
+	end
+
+	def test_content_type_text_escaped
+		str = <<-XML
+			<content type='text' xmlns="#{Atom::NAMESPACE}">some &amp; text</content>
+		XML
+
+		element = REXML::Document.new(str).root
+		content = Atom::Content.new(element)
+		
+		assert_respond_to content, :mime_type
+		assert_equal 'text/plain', content.mime_type
+
+		assert_respond_to content, :value
+		assert_equal 'some & text', content.value
 	end
 
 end
