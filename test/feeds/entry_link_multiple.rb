@@ -11,13 +11,14 @@ Description: entry multiple links
 XML
 
 test = lambda { |feed|
-	assert_equal 2, feed.links.size
+	links = feed.entries.first.links
+	assert_equal 2, links.size
 
-	assert_equal 'alternate', feed.links[0].rel
-	assert_equal 'application/xhtml+xml', feed.links[0].type
-	assert_equal 'http://www.example.com/', feed.links[0].href
+	assert_equal 'alternate', links[0].rel
+	assert_equal 'application/xhtml+xml', links[0].type
+	assert_equal 'http://www.example.com/', links[0].href
 
-	assert_equal 'service.post', feed.links[1].rel
-	assert_equal 'application/atom+xml', feed.links[1].type
-	assert_equal 'http://www.example.com/post', feed.links[1].href
+	assert_equal 'service.post', links[1].rel
+	assert_equal 'application/atom+xml', links[1].type
+	assert_equal 'http://www.example.com/post', links[1].href
 }

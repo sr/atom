@@ -12,5 +12,5 @@ Description: entry source title content type defaults to 'text/plain'
 XML
 
 test = lambda { |feed|
-	assert_equal 'text/plain', feed.entries[0].source.title_detail.type
+	assert_equal 'text/plain', feed.entries[0].source.title.mime_type
 }

@@ -12,5 +12,5 @@ Description: entry source rights content value
 XML
 
 test = lambda { |feed|
-	assert_equal 'Example Atom', feed.entries[0].source.rights_detail.value
+	assert_equal 'Example Atom', feed.entries[0].source.rights
 }

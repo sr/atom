@@ -12,5 +12,5 @@ Description: entry source title content value
 XML
 
 test = lambda { |feed|
-	assert_equal 'Example Atom', feed.entries[0].source.title_detail.value
+	assert_equal 'Example Atom', feed.entries[0].source.title
 }

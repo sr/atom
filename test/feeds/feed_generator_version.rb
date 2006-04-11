@@ -8,5 +8,5 @@ Description: feed generator version
 XML
 
 test = lambda { |feed|
-	assert_equal '2.65', feed.generator_detail.version
+	assert_equal '2.65', feed.generator.version
 }

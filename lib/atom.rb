@@ -27,6 +27,31 @@ require 'time'
 module Atom
 	NAMESPACE = 'http://www.w3.org/2005/Atom' 
 
+	class Text < String
+		attr :mime_type
+
+		def initialize(element)
+			type = element.attribute('type', NAMESPACE)
+			
+			@mime_type = if type.nil?
+				'text/plain'
+			else
+				case type.value
+					when 'text': 'text/plain'
+					when 'xhtml': 'text/xhtml'
+					else type.value
+				end
+			end
+
+			value = case @mime_type
+				when 'text/plain': element.texts.join
+				else element.children.to_s
+			end
+
+			super value
+		end
+	end
+
 	class Person
 		include XMLMapping
 
@@ -52,10 +77,10 @@ module Atom
 
 		has_attribute :uri
 		has_attribute :version
-		text :value
+		text :name
 
 		def to_s
-			value
+			name
 		end
 	end
 
@@ -116,9 +141,9 @@ module Atom
 		has_one :icon
 		has_many :links, :name => 'link', :type => Link
 		has_one :logo
-		has_one :rights
-		has_one :subtitle
-		has_one :title
+		has_one :rights, :type => Text
+		has_one :subtitle, :type => Text
+		has_one :title, :type => Text
 		has_one :updated, :transform => lambda { |t| Time.iso8601(t) }
 		has_many :contributors, :name => 'contributor', :type => Person 
 	end
@@ -129,8 +154,8 @@ module Atom
 		namespace NAMESPACE
 
 		has_one :id
-		has_one :title
-		has_one :summary
+		has_one :title, :type => Text
+		has_one :summary, :type => Text
 		has_many :authors, :name => 'author', :type => Person 
 		has_many :contributors, :name => 'contributor', :type => Person 
 		has_one :published, :transform => lambda { |t| Time.iso8601(t) }
@@ -139,6 +164,7 @@ module Atom
 		has_many :categories, :name => 'category', :type => Category
 		has_one :content, :type => Content
 		has_one :source, :type => Source
+		has_one :rights, :type => Text
 
 		has_many :extended_elements, :name => :any, :namespace => :any, :type => :raw
 	end
@@ -149,8 +175,8 @@ module Atom
 		namespace NAMESPACE
 
 		has_one :id
-		has_one :title
-		has_one :subtitle
+		has_one :title, :type => Text
+		has_one :subtitle, :type => Text
 		has_many :authors, :name => 'author', :type => Person
 		has_many :contributors, :name => 'contributor', :type => Person
 		has_many :entries, :name => 'entry', :type => Entry
@@ -158,7 +184,7 @@ module Atom
 		has_many :links, :name => 'link', :type => Link
 		has_one :updated, :transform => lambda { |t| Time.iso8601(t) }
 
-		has_one :rights
+		has_one :rights, :type => Text
 		has_one :icon
 		has_one :logo
 		has_many :categories, :name => 'category', :type => Category

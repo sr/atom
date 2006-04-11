@@ -8,5 +8,5 @@ Description: feed rights content value
 XML
 
 test = lambda { |feed|
-	assert_equal 'Example Atom', feed.rights_detail.value
+	assert_equal 'Example Atom', feed.rights
 }

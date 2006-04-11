@@ -8,5 +8,5 @@ Description: feed title type='text'
 XML
 
 test = lambda { |feed|
-	assert_equal 'text/plain', feed.title_detail.type
+	assert_equal 'text/plain', feed.title.mime_type
 }
