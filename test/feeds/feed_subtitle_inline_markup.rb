@@ -8,5 +8,5 @@ Description: feed subtitle inline XHTML
 XML
 
 test = lambda { |feed|
-	assert_equal '<div>Example <b>Atom</b></div>', feed.subtitle
+	assert_equal 'Example <b>Atom</b>', feed.subtitle
 }

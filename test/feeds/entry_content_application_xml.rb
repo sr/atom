@@ -10,5 +10,5 @@ Description: entry content inline XML
 XML
 
 test = lambda { |feed|
-	assert_equal '<div>Example <b>Atom</b></div>', feed.entries[0].content.value
+	assert_equal 'Example <b>Atom</b>', feed.entries[0].content.value
 }

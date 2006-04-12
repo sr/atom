@@ -10,5 +10,5 @@ Description: entry summary inline XHTML
 XML
 
 test = lambda { |feed|
-	assert_equal '<div>Example <b>Atom</b></div>', feed.entries[0].summary
+	assert_equal 'Example <b>Atom</b>', feed.entries[0].summary
 }

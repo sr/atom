@@ -12,5 +12,5 @@ Description: entry source rights inline XHTML
 XML
 
 test = lambda { |feed|
-	assert_equal '<div>Example <b>Atom</b></div>', feed.entries[0].source.rights
+	assert_equal 'Example <b>Atom</b>', feed.entries[0].source.rights
 }

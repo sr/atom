@@ -26,6 +26,7 @@ require 'time'
 
 module Atom
 	NAMESPACE = 'http://www.w3.org/2005/Atom' 
+	XHTML_NAMESPACE = 'http://www.w3.org/1999/xhtml'
 
 	class Text < String
 		attr :mime_type
@@ -40,13 +41,15 @@ module Atom
 					when 'text': 'text/plain'
 					when 'html': 'text/html'
 					when 'xhtml': 'text/xhtml'
-					else type.value
+					else raise "Unknown type: #{type.value}"
 				end
 			end
 
 			value = case @mime_type
 				when 'text/plain', 'text/html': element.texts.map {|t| t.value }.join
-				else element.children.to_s
+				when 'text/xhtml' :
+					REXML::XPath.first(element, 'xhtml:div', 'xhtml' => XHTML_NAMESPACE).children.to_s
+					# TODO: resolve relative uris
 			end
 
 			super value
@@ -76,8 +79,9 @@ module Atom
 			
 				@value = case @mime_type
 					when 'text/plain', 'text/html': element.texts.map { |t| t.value }.join
-					when 'text/xhtml', element.children.to_s
-					when /\+xml$|\/xml$/: element.elements.first
+					when 'text/xhtml':
+						REXML::XPath.first(element, 'xhtml:div', 'xhtml' => XHTML_NAMESPACE).children.to_s
+					when /\+xml$|\/xml$/: REXML::XPath.first(element).children.to_s
 					else element.texts.join.strip.unpack("m")[0]
 				end
 			else

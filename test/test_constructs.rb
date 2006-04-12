@@ -93,5 +93,18 @@ class TestAtom < Test::Unit::TestCase
 		assert_equal 'some & text', content.value
 	end
 
+	def test_text_type_xhtml
+		str = <<-XML
+			<title type='xhtml'><div xmlns="http://www.w3.org/1999/xhtml">itchy &amp; <b>scratchy</b></div></title>
+		XML
+
+		element = REXML::Document.new(str).root
+		content = Atom::Text.new(element)
+		
+		assert_respond_to content, :mime_type
+		assert_equal 'text/xhtml', content.mime_type
+
+		assert_equal 'itchy &amp; <b>scratchy</b>', content
+	end
 end
 
