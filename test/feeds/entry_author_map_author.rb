@@ -10,6 +10,6 @@ xml = <<XML
 </feed>
 XML
 
-test = lambda { |feed| 
-	assert_equal "Example author (me@example.com)", feed.entries.first.authors.first.to_s 
+test = lambda { |feed|
+	assert_equal "Example author (me@example.com)", feed.entries.first.authors.first.to_s
 }

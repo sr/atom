@@ -19,216 +19,216 @@
 # LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-# 
+#
 
 require 'xmlmapping'
 require 'time'
 
 module Atom
-	NAMESPACE = 'http://www.w3.org/2005/Atom' 
-	XHTML_NAMESPACE = 'http://www.w3.org/1999/xhtml'
+  NAMESPACE = 'http://www.w3.org/2005/Atom'
+  XHTML_NAMESPACE = 'http://www.w3.org/1999/xhtml'
 
-	class Text < String
-		attr :mime_type
+  class Text < String
+    attr :mime_type
 
-		def initialize(element)
-			type = element.attribute('type', NAMESPACE)
-			
-			@mime_type = if type.nil?
-				'text/plain'
-			else
-				case type.value
-					when 'text': 'text/plain'
-					when 'html': 'text/html'
-					when 'xhtml': 'text/xhtml'
-					else raise "Unknown type: #{type.value}"
-				end
-			end
+    def initialize(element)
+      type = element.attribute('type', NAMESPACE)
 
-			value = case @mime_type
-				when 'text/plain', 'text/html': element.texts.map {|t| t.value }.join
-				when 'text/xhtml' :
-					REXML::XPath.first(element, 'xhtml:div', 'xhtml' => XHTML_NAMESPACE).children.to_s
-					# TODO: resolve relative uris
-			end
+      @mime_type = if type.nil?
+        'text/plain'
+      else
+        case type.value
+          when 'text': 'text/plain'
+          when 'html': 'text/html'
+          when 'xhtml': 'text/xhtml'
+          else raise "Unknown type: #{type.value}"
+        end
+      end
 
-			super value
-		end
-	end
+      value = case @mime_type
+        when 'text/plain', 'text/html': element.texts.map {|t| t.value }.join
+        when 'text/xhtml' :
+          REXML::XPath.first(element, 'xhtml:div', 'xhtml' => XHTML_NAMESPACE).children.to_s
+          # TODO: resolve relative uris
+      end
 
-	class Content
-		attr :mime_type
-		attr :src
-		attr :value
+      super value
+    end
+  end
 
-		def initialize(element)
-			type = element.attribute('type', NAMESPACE)
-			src = element.attribute('src', NAMESPACE)
-			
-			if src.nil?
-				@mime_type = if type.nil?
-					'text/plain'
-				else
-					case type.value
-						when 'text': 'text/plain'
-						when 'html': 'text/html'
-						when 'xhtml': 'text/xhtml'
-						else type.value
-					end
-				end
-			
-				@value = case @mime_type
-					when 'text/plain', 'text/html': element.texts.map { |t| t.value }.join
-					when 'text/xhtml':
-						REXML::XPath.first(element, 'xhtml:div', 'xhtml' => XHTML_NAMESPACE).children.to_s
-					when /\+xml$|\/xml$/: REXML::XPath.first(element).children.to_s
-					else element.texts.join.strip.unpack("m")[0]
-				end
-			else
-				@src = src.value
-				if !type.nil?
-					@mime_type = type.value
-				end
+  class Content
+    attr :mime_type
+    attr :src
+    attr :value
 
-				@value = nil
-			end
-		end
-	end
+    def initialize(element)
+      type = element.attribute('type', NAMESPACE)
+      src = element.attribute('src', NAMESPACE)
 
-	class Person
-		include XMLMapping
+      if src.nil?
+        @mime_type = if type.nil?
+          'text/plain'
+        else
+          case type.value
+            when 'text': 'text/plain'
+            when 'html': 'text/html'
+            when 'xhtml': 'text/xhtml'
+            else type.value
+          end
+        end
 
-		namespace NAMESPACE
+        @value = case @mime_type
+          when 'text/plain', 'text/html': element.texts.map { |t| t.value }.join
+          when 'text/xhtml':
+            REXML::XPath.first(element, 'xhtml:div', 'xhtml' => XHTML_NAMESPACE).children.to_s
+          when /\+xml$|\/xml$/: REXML::XPath.first(element).children.to_s
+          else element.texts.join.strip.unpack("m")[0]
+        end
+      else
+        @src = src.value
+        if !type.nil?
+          @mime_type = type.value
+        end
 
-		has_one :name
-		has_one :email
-		has_one :uri
+        @value = nil
+      end
+    end
+  end
 
-		def to_s
-			if !email.nil?
-				"#{name} (#{email})"
-			else
-				name
-			end
-		end
-	end
+  class Person
+    include XMLMapping
 
-	class Generator
-		include XMLMapping
+    namespace NAMESPACE
 
-		namespace NAMESPACE
+    has_one :name
+    has_one :email
+    has_one :uri
 
-		has_attribute :uri
-		has_attribute :version
-		text :name
+    def to_s
+      if !email.nil?
+        "#{name} (#{email})"
+      else
+        name
+      end
+    end
+  end
 
-		def to_s
-			name
-		end
-	end
+  class Generator
+    include XMLMapping
 
-	class Link
-		include XMLMapping
+    namespace NAMESPACE
 
-		namespace NAMESPACE
+    has_attribute :uri
+    has_attribute :version
+    text :name
 
-		has_attribute :href
-		has_attribute :rel, :default => 'alternate'
-		has_attribute :type
-		has_attribute :hreflang
-		has_attribute :title
-		has_attribute :length
+    def to_s
+      name
+    end
+  end
 
-		def to_s
-			href
-		end
-	end
+  class Link
+    include XMLMapping
 
-	class Category
-		include XMLMapping
+    namespace NAMESPACE
 
-		namespace NAMESPACE
+    has_attribute :href
+    has_attribute :rel, :default => 'alternate'
+    has_attribute :type
+    has_attribute :hreflang
+    has_attribute :title
+    has_attribute :length
 
-		has_attribute :term
-		has_attribute :scheme
-		has_attribute :label
+    def to_s
+      href
+    end
+  end
 
-		def to_s
-			term
-		end
-	end
+  class Category
+    include XMLMapping
 
-	class Source
-		include XMLMapping
+    namespace NAMESPACE
 
-		namespace NAMESPACE
+    has_attribute :term
+    has_attribute :scheme
+    has_attribute :label
 
-		has_one :id
-		has_many :authors, :name => 'author', :type => Person
-		has_many :categories, :name => 'category', :type => Category
-		has_one :generator, :type => Generator
-		has_one :icon
-		has_many :links, :name => 'link', :type => Link
-		has_one :logo
-		has_one :rights, :type => Text
-		has_one :subtitle, :type => Text
-		has_one :title, :type => Text
-		has_one :updated, :transform => lambda { |t| Time.iso8601(t) }
-		has_many :contributors, :name => 'contributor', :type => Person 
-	end
+    def to_s
+      term
+    end
+  end
 
-	class Entry
-		include XMLMapping
+  class Source
+    include XMLMapping
 
-		namespace NAMESPACE
+    namespace NAMESPACE
 
-		has_one :id
-		has_one :title, :type => Text
-		has_one :summary, :type => Text
-		has_many :authors, :name => 'author', :type => Person 
-		has_many :contributors, :name => 'contributor', :type => Person 
-		has_one :published, :transform => lambda { |t| Time.iso8601(t) }
-		has_one :updated, :transform => lambda { |t| Time.iso8601(t) }
-		has_many :links, :name => 'link', :type => Link
-		has_many :categories, :name => 'category', :type => Category
-		has_one :content, :type => Content
-		has_one :source, :type => Source
-		has_one :rights, :type => Text
+    has_one :id
+    has_many :authors, :name => 'author', :type => Person
+    has_many :categories, :name => 'category', :type => Category
+    has_one :generator, :type => Generator
+    has_one :icon
+    has_many :links, :name => 'link', :type => Link
+    has_one :logo
+    has_one :rights, :type => Text
+    has_one :subtitle, :type => Text
+    has_one :title, :type => Text
+    has_one :updated, :transform => lambda { |t| Time.iso8601(t) }
+    has_many :contributors, :name => 'contributor', :type => Person
+  end
 
-		has_many :extended_elements, :name => :any, :namespace => :any, :type => :raw
-	end
+  class Entry
+    include XMLMapping
 
-	class Feed 
-		include XMLMapping
+    namespace NAMESPACE
 
-		namespace NAMESPACE
+    has_one :id
+    has_one :title, :type => Text
+    has_one :summary, :type => Text
+    has_many :authors, :name => 'author', :type => Person
+    has_many :contributors, :name => 'contributor', :type => Person
+    has_one :published, :transform => lambda { |t| Time.iso8601(t) }
+    has_one :updated, :transform => lambda { |t| Time.iso8601(t) }
+    has_many :links, :name => 'link', :type => Link
+    has_many :categories, :name => 'category', :type => Category
+    has_one :content, :type => Content
+    has_one :source, :type => Source
+    has_one :rights, :type => Text
 
-		has_one :id
-		has_one :title, :type => Text
-		has_one :subtitle, :type => Text
-		has_many :authors, :name => 'author', :type => Person
-		has_many :contributors, :name => 'contributor', :type => Person
-		has_many :entries, :name => 'entry', :type => Entry
-		has_one :generator, :type => Generator
-		has_many :links, :name => 'link', :type => Link
-		has_one :updated, :transform => lambda { |t| Time.iso8601(t) }
+    has_many :extended_elements, :name => :any, :namespace => :any, :type => :raw
+  end
 
-		has_one :rights, :type => Text
-		has_one :icon
-		has_one :logo
-		has_many :categories, :name => 'category', :type => Category
-	end
+  class Feed
+    include XMLMapping
+
+    namespace NAMESPACE
+
+    has_one :id
+    has_one :title, :type => Text
+    has_one :subtitle, :type => Text
+    has_many :authors, :name => 'author', :type => Person
+    has_many :contributors, :name => 'contributor', :type => Person
+    has_many :entries, :name => 'entry', :type => Entry
+    has_one :generator, :type => Generator
+    has_many :links, :name => 'link', :type => Link
+    has_one :updated, :transform => lambda { |t| Time.iso8601(t) }
+
+    has_one :rights, :type => Text
+    has_one :icon
+    has_one :logo
+    has_many :categories, :name => 'category', :type => Category
+  end
 end
-		
 
-if $0 == __FILE__ 
-	require 'net/http'
-	require 'uri'
 
-	str = Net::HTTP::get(URI::parse('http://blog.ning.com/atom.xml'))
-	feed = Atom::Feed.new(str)
+if $0 == __FILE__
+  require 'net/http'
+  require 'uri'
 
-	feed.entries.each { |entry|
-		puts "'#{entry.title}' by #{entry.authors[0].name} on #{entry.published.strftime('%m/%d/%Y')}"
-	}
+  str = Net::HTTP::get(URI::parse('http://blog.ning.com/atom.xml'))
+  feed = Atom::Feed.new(str)
+
+  feed.entries.each { |entry|
+    puts "'#{entry.title}' by #{entry.authors[0].name} on #{entry.published.strftime('%m/%d/%Y')}"
+  }
 end
