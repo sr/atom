@@ -65,31 +65,30 @@ module Atom
       type = element.attribute('type', NAMESPACE)
       src = element.attribute('src', NAMESPACE)
 
-      if src.nil?
-        @mime_type = if type.nil?
-          'text/plain'
-        else
-          case type.value
-            when 'text': 'text/plain'
-            when 'html': 'text/html'
-            when 'xhtml': 'text/xhtml'
-            else type.value
+      unless src
+        @mime_type =
+          case type ? type.value : nil
+          when 'text', nil  then 'text/plain'
+          when 'html'       then 'text/html'
+          when 'xhtml'      then 'text/xhtml'
+          else
+            type.value
           end
-        end
 
-        @value = case @mime_type
-          when 'text/plain', 'text/html': element.texts.map { |t| t.value }.join
+        @value =
+          case @mime_type
+          when 'text/plain', 'text/html'
+            element.texts.map { |t| t.value }.join
           when 'text/xhtml':
             REXML::XPath.first(element, 'xhtml:div', 'xhtml' => XHTML_NAMESPACE).children.to_s
-          when /\+xml$|\/xml$/: REXML::XPath.first(element).children.to_s
-          else element.texts.join.strip.unpack("m")[0]
-        end
+          when /\+xml$|\/xml$/:
+            REXML::XPath.first(element).children.to_s
+          else
+            element.texts.join.strip.unpack("m")[0]
+          end
       else
         @src = src.value
-        if !type.nil?
-          @mime_type = type.value
-        end
-
+        @mime_type = type.value if type
         @value = nil
       end
     end
@@ -105,11 +104,7 @@ module Atom
     has_one :uri
 
     def to_s
-      if !email.nil?
-        "#{name} (#{email})"
-      else
-        name
-      end
+      email ? "#{name} (#{email})" : name
     end
   end
 
@@ -164,17 +159,18 @@ module Atom
     namespace NAMESPACE
 
     has_one :id
-    has_many :authors, :name => 'author', :type => Person
-    has_many :categories, :name => 'category', :type => Category
-    has_one :generator, :type => Generator
     has_one :icon
-    has_many :links, :name => 'link', :type => Link
     has_one :logo
-    has_one :rights, :type => Text
-    has_one :subtitle, :type => Text
-    has_one :title, :type => Text
-    has_one :updated, :transform => lambda { |t| Time.iso8601(t) }
+    has_one :generator, :type => Generator
+    has_one :rights,    :type => Text
+    has_one :subtitle,  :type => Text
+    has_one :title,     :type => Text
+    has_one :updated,   :transform => lambda { |value| Time.iso8601(value) }
+
+    has_many :authors,      :name => 'author',      :type => Person
     has_many :contributors, :name => 'contributor', :type => Person
+    has_many :links,        :name => 'link',        :type => Link
+    has_many :categories,   :name => 'category',    :type => Category
   end
 
   class Entry
@@ -183,17 +179,18 @@ module Atom
     namespace NAMESPACE
 
     has_one :id
-    has_one :title, :type => Text
-    has_one :summary, :type => Text
-    has_many :authors, :name => 'author', :type => Person
+    has_one :published, :transform => lambda { |value| Time.iso8601(value) }
+    has_one :updated,   :transform => lambda { |value| Time.iso8601(value) }
+    has_one :title,     :type => Text
+    has_one :summary,   :type => Text
+    has_one :rights,    :type => Text
+    has_one :source,    :type => Source
+    has_one :content,   :type => Content
+
+    has_many :authors,      :name => 'author',      :type => Person
     has_many :contributors, :name => 'contributor', :type => Person
-    has_one :published, :transform => lambda { |t| Time.iso8601(t) }
-    has_one :updated, :transform => lambda { |t| Time.iso8601(t) }
-    has_many :links, :name => 'link', :type => Link
-    has_many :categories, :name => 'category', :type => Category
-    has_one :content, :type => Content
-    has_one :source, :type => Source
-    has_one :rights, :type => Text
+    has_many :links,        :name => 'link',        :type => Link
+    has_many :categories,   :name => 'category',    :type => Category
 
     has_many :extended_elements, :name => :any, :namespace => :any, :type => :raw
   end
@@ -204,19 +201,19 @@ module Atom
     namespace NAMESPACE
 
     has_one :id
-    has_one :title, :type => Text
-    has_one :subtitle, :type => Text
-    has_many :authors, :name => 'author', :type => Person
-    has_many :contributors, :name => 'contributor', :type => Person
-    has_many :entries, :name => 'entry', :type => Entry
+    has_one :updated, :transform => lambda { |value| Time.iso8601(value) }
+    has_one :title,     :type => Text
+    has_one :subtitle,  :type => Text
+    has_one :rights,    :type => Text
     has_one :generator, :type => Generator
-    has_many :links, :name => 'link', :type => Link
-    has_one :updated, :transform => lambda { |t| Time.iso8601(t) }
-
-    has_one :rights, :type => Text
     has_one :icon
     has_one :logo
-    has_many :categories, :name => 'category', :type => Category
+
+    has_many :authors,      :name => 'author',      :type => Person
+    has_many :contributors, :name => 'contributor', :type => Person
+    has_many :links,        :name => 'link',        :type => Link
+    has_many :categories,   :name => 'category',    :type => Category
+    has_many :entries,      :name => 'entry',       :type => Entry
   end
 end
 
