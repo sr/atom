@@ -1,7 +1,4 @@
-$LOAD_PATH << '../lib'
-
-require 'atom'
-require 'test/unit'
+require File.dirname(__FILE__) + '/test_helper'
 
 class FeedTests < Test::Unit::TestCase
   basedir = File.dirname(__FILE__)
