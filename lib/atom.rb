@@ -35,23 +35,24 @@ module Atom
     def initialize(element)
       type = element.attribute('type', NAMESPACE)
 
-      @mime_type = if type.nil?
-        'text/plain'
-      else
-        case type.value
-          when 'text': 'text/plain'
-          when 'html': 'text/html'
-          when 'xhtml': 'text/xhtml'
-          else raise "Unknown type: #{type.value}"
+      @mime_type =
+        case type ? type.value : nil
+        when 'text'   then 'text/plain'
+        when 'html'   then 'text/html'
+        when 'xhtml'  then 'text/xhtml'
+        when nil      then 'text/plain'
+        else
+          raise ArgumentError, "Unknown type: #{type.value}"
         end
-      end
 
-      value = case @mime_type
-        when 'text/plain', 'text/html': element.texts.map {|t| t.value }.join
-        when 'text/xhtml' :
-          REXML::XPath.first(element, 'xhtml:div', 'xhtml' => XHTML_NAMESPACE).children.to_s
+      value =
+        case @mime_type
+        when 'text/plain', 'text/html'
+          element.texts.map(&:value).join
+        when 'text/xhtml'
           # TODO: resolve relative uris
-      end
+          REXML::XPath.first(element, 'xhtml:div', 'xhtml' => XHTML_NAMESPACE).children.to_s
+        end
 
       super value
     end
