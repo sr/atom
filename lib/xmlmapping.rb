@@ -162,7 +162,7 @@ module XMLMapping
 
     private
     def add(attribute, xml_type, mapping)
-      attr attribute
+      attr_reader attribute
 
       initialize_vars
 

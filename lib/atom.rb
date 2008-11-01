@@ -30,7 +30,7 @@ module Atom
   XHTML_NAMESPACE = 'http://www.w3.org/1999/xhtml'
 
   class Text < String
-    attr :mime_type
+    attr_reader :mime_type
 
     def initialize(element)
       type = element.attribute('type', NAMESPACE)
@@ -58,9 +58,7 @@ module Atom
   end
 
   class Content
-    attr :mime_type
-    attr :src
-    attr :value
+    attr_reader :mime_type, :src, :value
 
     def initialize(element)
       type = element.attribute('type', NAMESPACE)
