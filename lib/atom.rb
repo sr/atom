@@ -21,8 +21,9 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-require 'xmlmapping'
 require 'time'
+
+require File.dirname(__FILE__) + '/xmlmapping'
 
 module Atom
   NAMESPACE = 'http://www.w3.org/2005/Atom'
