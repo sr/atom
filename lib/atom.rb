@@ -1,4 +1,5 @@
 require 'time'
+require 'uri'
 
 require File.dirname(__FILE__) + '/xmlmapping'
 
@@ -27,12 +28,22 @@ module Atom
         when 'text/plain', 'text/html'
           element.texts.map(&:value).join
         when 'text/xhtml'
-          # TODO: resolve relative uris
-          REXML::XPath.first(element, 'xhtml:div', 'xhtml' => XHTML_NAMESPACE).children.to_s
+          base = element.attribute('base') || element.parent.attribute('base')
+          content = REXML::XPath.first(element, 'xhtml:div', 'xhtml' => XHTML_NAMESPACE).children
+          content.map! { |element| resolve_uri(element, base) }
+          content.to_s
         end
 
       super value
     end
+
+    private
+      def resolve_uri(element, base)
+        return element unless element.is_a?(REXML::Element) && element.attribute('href')
+        uri = URI.join(base.to_s, element.attribute('href').value).to_s
+        element.add_attribute('href', uri)
+        element
+      end
   end
 
   class Content
